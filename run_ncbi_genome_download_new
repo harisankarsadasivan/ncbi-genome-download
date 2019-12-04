@@ -1,0 +1,98 @@
+#!/bin/bash
+#wrapper script to download assemblies for input taxid
+#Owner: Harisankar
+#$2 is the tax group to download
+#$1 is taxid to download
+i=0
+echo :::::::::::::::::SEARCHING IN REFSEQ::::::::::::::::
+python ncbi-genome-download-runner.py --taxid $1 $2 --assembly-level complete --format fasta -R reference
+if [ $? -eq 0 ]; then
+    echo Found assembly for $1 with reference genome
+    i=1
+else
+    echo Found no assembly for $1 with reference genome; i=0
+    python ncbi-genome-download-runner.py --taxid $1 $2 --assembly-level complete --format fasta -R reference
+
+
+    if [ $? -eq 0 ]; then
+    echo Found assembly for $1 with reference genome 
+    i=1
+    else
+        echo Found no assembly for $1 with reference genome, trying representative genome;i=0
+        python ncbi-genome-download-runner.py --taxid $1 $2 --assembly-level complete --format fasta -R representative
+
+        if [ $? -eq 0 ]; then
+                echo Found assembly for $1 with representative genome
+                i=1
+        else
+                echo Found no assembly for $1 with representative genome, trying any assembly;i=0
+                python ncbi-genome-download-runner.py --format fasta --taxid $1 $2
+
+                if [ $? -eq 0 ]; then
+                    echo Found some assembly for $1 with NCBI
+                    i=1
+                else
+                    echo Found no assembly for $1 with NCBI;i=0;
+                    echo :::::::::::::::::SEARCHING IN GENBANK::::::::::::::::
+                    python ncbi-genome-download-runner.py -s genbank --taxid $1 $2 --assembly-level complete --format fasta -R reference
+                    if [ $? -eq 0 ]; then
+                        echo Found assembly for $1 with reference genome
+                        i=1
+                    else
+                        echo Found no assembly for $1 with reference genome;i=0;
+                        python ncbi-genome-download-runner.py -s genbank --taxid $1 $2 --assembly-level complete --format fasta -R reference                             
+                        if [ $? -eq 0 ]; then
+                        echo Found assembly for $1 with reference genome        
+                        i=1
+                        else
+                            echo Found no assembly for $1 with reference genome, trying representative genome;i=0;
+                            python ncbi-genome-download-runner.py -s genbank --taxid $1 $2 --assembly-level complete --format fasta -R representative
+                    
+                            if [ $? -eq 0 ]; then
+                                    echo Found assembly for $1 with representative genome
+                                    i=1
+                            else
+                                    echo Found no assembly for $1 with representative genome, trying any assembly;i=0;
+                                    #python ncbi-genome-download-runner.py -s genbank --taxid $1 $2 --assembly-level complete --format fasta -R all
+                                    python ncbi-genome-download-runner.py -s genbank --format fasta --taxid $1 $2
+                    
+                                    if [ $? -eq 0 ]; then
+                                    echo Found assembly for $1 with representative genome
+                                    i=1
+                            else
+                                    echo Found no assembly for $1 with representative genome, trying any assembly;i=0;
+                                    #python ncbi-genome-download-runner.py -s genbank --taxid $1 $2 --assembly-level complete --format fasta -R all
+                                    python ncbi-genome-download-runner.py -s genbank --format fasta --taxid $1 $2
+                    
+                                    if [ $? -eq 0 ]; then
+                                        echo Found some assembly for $1 with NCBI
+                                        i=1
+                                    else
+                                        echo Found no assembly for $1 with NCBI;i=0;
+
+                                    fi
+                            fi
+                        fi
+                    fi
+
+                fi
+        fi
+    fi
+fi
+
+if [ $i -eq 1 ];
+then
+
+        echo Total TAXA assemblies downloaded 1
+        #rename folder
+        #new_folder=$(ls -td -- /home/dna/hariss/ncbi-genome-download/refseq/$2/* | head -n 1);
+        #gunzip -k $new_folder/*.gz
+        #yes | mv $new_folder/*.fna $new_folder/$1.fa
+        #rm -rf $new_folder/*gz $new_folder/MD5*
+        #mv $new_folder /home/dna/hariss/ncbi-genome-download/refseq/$2/$1
+        i=0
+
+else
+ echo ERROR: failed to download $1;
+ exit 1
+fi
